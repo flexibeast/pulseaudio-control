@@ -8,6 +8,7 @@
 ;; URL: https://github.com/flexibeast/pulsectl
 ;; Keywords: multimedia, hardware, sound, PulseAudio
 ;; Version: 0.1
+;; Package-Version: 0.1
 
 ;;
 ;; This file is NOT part of GNU Emacs.
