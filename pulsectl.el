@@ -168,7 +168,9 @@ Amount of increase is specified by `pulsectl-volume-step'."
 (defun pulsectl-select-sink-by-index (sink)
   "Select which Pulse sink to act on, by numeric index.
 
-Accepts number as prefix argument."
+Accepts number as prefix argument.
+
+Argument SINK is the number provided by the user."
   (interactive "NSink index: ")
   (let ((sink (number-to-string sink))
         (valid-sinks (mapcar 'car (pulsectl--get-sinks))))
@@ -213,7 +215,9 @@ The value can be:
 
 * a percentage, e.g. '10%';
 * in decibels, e.g. '2dB';
-* a linear factor, e.g. '0.9' or '1.1'." 
+* a linear factor, e.g. '0.9' or '1.1'.
+
+Argument VOLUME is the volume provided by the user." 
   (interactive "MVolume: ")
   (let ((valid-volumes-re (concat
                            "[[:digit:]]+%"
@@ -235,7 +239,9 @@ The value can be:
                                       " toggle")))
 
 (defun pulsectl-toggle-sink-mute-by-index (sink)
-  "Toggle muting of Pulse sink, specified by index."
+  "Toggle muting of Pulse sink, specified by index.
+
+Argument SINK is the number provided by the user."
   (interactive "NSink index: ")
   (let ((sink (number-to-string sink))
         (valid-sinks (mapcar 'car (pulsectl--get-sinks))))
