@@ -45,13 +45,13 @@
 
 ;; ## Usage
 
-;; Use C-x / to access the `pulsectl' keymap. The default keybindings in that keymap are:
+;; Use C-x / to access the `pulsectl' keymap.  The default keybindings in that keymap are:
 
 ;; * + : Increase the volume of the currently-selected sink by `pulsectl-volume-step' (`pulsectl-increase-volume').
 
 ;; * - : Decrease the volume of the currently-selected sink by `pulsectl-volume-step' (`pulsectl-decrease-volume').
 
-;; * v : Directly specify the volume of the currently-selected sink (`pulsectl-set-volume'). The value can be:
+;; * v : Directly specify the volume of the currently-selected sink (`pulsectl-set-volume').  The value can be:
 
 ;;   * a percentage, e.g. '10%';
 ;;   * in decibels, e.g. '2dB';
