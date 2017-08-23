@@ -6,7 +6,8 @@
 ;; Maintainer: Alexis <flexibeast@gmail.com>
 ;; Created: 2017-08-23
 ;; URL: https://github.com/flexibeast/pulsectl
-;; Keywords: sound, PulseAudio
+;; Keywords: multimedia, hardware, sound, PulseAudio
+;; Version: 0.1
 
 ;;
 ;; This file is NOT part of GNU Emacs.
@@ -189,7 +190,7 @@ Accepts number as prefix argument."
                                               " set-default-sink "
                                               sink))
           (setq pulsectl--current-sink sink))
-      (user-error "Invalid sink index"))))
+      (error "Invalid sink index"))))
 
 (defun pulsectl-select-sink-by-name ()
   "Select which Pulse sink to act on, by name."
@@ -202,7 +203,7 @@ Accepts number as prefix argument."
                                               " set-default-sink "
                                               sink))
           (setq pulsectl--current-sink sink))
-      (user-error "Invalid sink name"))))
+      (error "Invalid sink name"))))
 
 (defun pulsectl-set-volume (volume)
   "Set volume of currently-selected Pulse sink.
@@ -222,7 +223,7 @@ The value can be:
                                             " set-sink-volume "
                                             pulsectl--current-sink
                                             " " volume))
-      (user-error "Invalid volume"))))
+      (error "Invalid volume"))))
 
 (defun pulsectl-toggle-current-sink-mute ()
   "Toggle muting of currently-selected Pulse sink."
@@ -243,7 +244,7 @@ The value can be:
                                               " set-sink-mute "
                                               sink
                                               " toggle")))
-      (user-error "Invalid sink index"))))
+      (error "Invalid sink index"))))
 
 (defun pulsectl-toggle-sink-mute-by-name ()
   "Toggle muting of Pulse sink, specified by name."
@@ -256,7 +257,7 @@ The value can be:
                                               " set-sink-mute "
                                               sink
                                               " toggle")))
-      (user-error "Invalid sink name"))))
+      (error "Invalid sink name"))))
 
 
 ;; Default keymap.
