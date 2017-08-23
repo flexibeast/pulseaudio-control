@@ -20,25 +20,25 @@ Install [pulsectl from MELPA](http://melpa.org/#/pulsectl), or put `pulsectl.el`
 
 Use <kbd>C-x /</kbd> to access the `pulsectl` keymap. The default keybindings in that keymap are:
 
-* + : Increase the volume of the currently-selected sink by `pulsectl-volume-step` (`pulsectl-increase-volume`).
+* <kbd>&#0043;</kbd> : Increase the volume of the currently-selected sink by `pulsectl-volume-step` (`pulsectl-increase-volume`).
 
-* - : Decrease the volume of the currently-selected sink by `pulsectl-volume-step` (`pulsectl-decrease-volume`).
+* <kbd>&#0045;</kbd> : Decrease the volume of the currently-selected sink by `pulsectl-volume-step` (`pulsectl-decrease-volume`).
 
-* v : Directly specify the volume of the currently-selected sink (`pulsectl-set-volume`). The value can be:
+* <kbd>v</kbd> : Directly specify the volume of the currently-selected sink (`pulsectl-set-volume`). The value can be:
 
   * a percentage, e.g. '10%';
   * in decibels, e.g. '2dB';
   * a linear factor, e.g. '0.9' or '1.1'.
 
-* m : Toggle muting of the currently-selected sink (`pulsectl-toggle-current-sink-mute`).
+* <kbd>m</kbd> : Toggle muting of the currently-selected sink (`pulsectl-toggle-current-sink-mute`).
 
-* x : Toggle muting of a sink, specified by index (`pulsectl-toggle-sink-mute-by-index`).
+* <kbd>x</kbd> : Toggle muting of a sink, specified by index (`pulsectl-toggle-sink-mute-by-index`).
 
-* e : Toggle muting of a sink, specified by name (`pulsectl-toggle-sink-mute-by-name`).
+* <kbd>e</kbd> : Toggle muting of a sink, specified by name (`pulsectl-toggle-sink-mute-by-name`).
 
-* i : Select a sink to be the current sink, specified by index (`pulsectl-select-sink-by-index`).
+* <kbd>i</kbd> : Select a sink to be the current sink, specified by index (`pulsectl-select-sink-by-index`).
 
-* n : Select a sink to be the current sink, specified by name (`pulsectl-select-sink-by-name`).
+* <kbd>n</kbd> : Select a sink to be the current sink, specified by name (`pulsectl-select-sink-by-name`).
 
 Customisation options, including `pulsectl-volume-step`, are available via the `pulsectl` customize-group.
 
