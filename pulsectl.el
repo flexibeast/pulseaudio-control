@@ -143,6 +143,7 @@ The value can be:
 
 ;; User-facing functions.
 
+;;;###autoload
 (defun pulsectl-decrease-volume ()
   "Decrease volume of currently-selected Pulse sink.
 
@@ -154,6 +155,7 @@ Amount of decrease is specified by `pulsectl-volume-step'."
                                       " -"
                                       pulsectl-volume-step)))
 
+;;;###autoload
 (defun pulsectl-increase-volume ()
   "Increase volume of currently-selected Pulse sink.
 
@@ -165,6 +167,7 @@ Amount of increase is specified by `pulsectl-volume-step'."
                                       " +"
                                       pulsectl-volume-step)))
 
+;;;###autoload
 (defun pulsectl-select-sink-by-index (sink)
   "Select which Pulse sink to act on, by numeric index.
 
@@ -195,6 +198,7 @@ Argument SINK is the number provided by the user."
           (setq pulsectl--current-sink sink))
       (error "Invalid sink index"))))
 
+;;;###autoload
 (defun pulsectl-select-sink-by-name ()
   "Select which Pulse sink to act on, by name."
   (interactive)
@@ -208,6 +212,7 @@ Argument SINK is the number provided by the user."
           (setq pulsectl--current-sink sink))
       (error "Invalid sink name"))))
 
+;;;###autoload
 (defun pulsectl-set-volume (volume)
   "Set volume of currently-selected Pulse sink.
 
@@ -230,6 +235,7 @@ Argument VOLUME is the volume provided by the user."
                                             " " volume))
       (error "Invalid volume"))))
 
+;;;###autoload
 (defun pulsectl-toggle-current-sink-mute ()
   "Toggle muting of currently-selected Pulse sink."
   (interactive)
@@ -238,6 +244,7 @@ Argument VOLUME is the volume provided by the user."
                                       pulsectl--current-sink
                                       " toggle")))
 
+;;;###autoload
 (defun pulsectl-toggle-sink-mute-by-index (sink)
   "Toggle muting of Pulse sink, specified by index.
 
@@ -253,6 +260,7 @@ Argument SINK is the number provided by the user."
                                               " toggle")))
       (error "Invalid sink index"))))
 
+;;;###autoload
 (defun pulsectl-toggle-sink-mute-by-name ()
   "Toggle muting of Pulse sink, specified by name."
   (interactive)
