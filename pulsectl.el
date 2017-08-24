@@ -128,17 +128,16 @@ The value can be:
 
 (defun pulsectl--get-sinks ()
   "Internal function; get a list of Pulse sinks via `pactl'."
-  (let ((bfr (generate-new-buffer " *pactl-output*"))
-        (fields-re "^\\(\\S-+\\)\\s-+\\(\\S-+\\)")
+  (let ((fields-re "^\\(\\S-+\\)\\s-+\\(\\S-+\\)")
         (sinks '()))
-    (call-process-shell-command (concat pulsectl-pactl-path " list short sinks") nil bfr)
-    (with-current-buffer bfr
+    (with-temp-buffer
+      (call-process-shell-command (concat pulsectl-pactl-path " list short sinks") nil (current-buffer))
       (goto-char (point-min))
       (while (re-search-forward fields-re nil t)
         (let ((number (match-string 1))
               (name (match-string 2)))
-          (setq sinks (append sinks (list `(,number . ,name))))))
-      sinks)))
+          (setq sinks (append sinks (list `(,number . ,name)))))))
+    sinks))
 
 
 ;; User-facing functions.
