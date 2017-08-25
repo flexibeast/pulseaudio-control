@@ -126,12 +126,23 @@ The value can be:
 
 ;; Internal functions.
 
+(defun pulsectl--call-pactl (command)
+  "Call `pactl' with COMMAND as its arguments.
+
+COMMAND is a single string separated by spaces,
+e.g. 'list short sinks'."
+  (let ((args `("" nil
+                ,pulsectl-pactl-path
+                nil t nil
+                ,@(split-string command " "))))
+    (apply #'call-process-region args)))
+
 (defun pulsectl--get-sinks ()
   "Internal function; get a list of Pulse sinks via `pactl'."
   (let ((fields-re "^\\(\\S-+\\)\\s-+\\(\\S-+\\)")
         (sinks '()))
     (with-temp-buffer
-      (call-process-shell-command (concat pulsectl-pactl-path " list short sinks") nil (current-buffer))
+      (pulsectl--call-pactl "list short sinks")
       (goto-char (point-min))
       (while (re-search-forward fields-re nil t)
         (let ((number (match-string 1))
@@ -148,11 +159,10 @@ The value can be:
 
 Amount of decrease is specified by `pulsectl-volume-step'."
   (interactive)
-  (call-process-shell-command (concat pulsectl-pactl-path
-                                      " set-sink-volume "
-                                      pulsectl--current-sink
-                                      " -"
-                                      pulsectl-volume-step)))
+  (pulsectl--call-pactl (concat "set-sink-volume "
+                                pulsectl--current-sink
+                                " -"
+                                pulsectl-volume-step)))
 
 ;;;###autoload
 (defun pulsectl-increase-volume ()
@@ -160,11 +170,10 @@ Amount of decrease is specified by `pulsectl-volume-step'."
 
 Amount of increase is specified by `pulsectl-volume-step'."
   (interactive)
-  (call-process-shell-command (concat pulsectl-pactl-path
-                                      " set-sink-volume "
-                                      pulsectl--current-sink
-                                      " +"
-                                      pulsectl-volume-step)))
+  (pulsectl--call-pactl (concat "set-sink-volume "
+                                pulsectl--current-sink
+                                " +"
+                                pulsectl-volume-step)))
 
 ;;;###autoload
 (defun pulsectl-select-sink-by-index (sink)
@@ -191,9 +200,8 @@ Argument SINK is the number provided by the user."
           ;; However, as at 20170828, it seems to work with
           ;; a numeric index also.
           ;;
-          (call-process-shell-command (concat pulsectl-pactl-path
-                                              " set-default-sink "
-                                              sink))
+          (pulsectl--call-pactl (concat "set-default-sink "
+                                        sink))
           (setq pulsectl--current-sink sink))
       (error "Invalid sink index"))))
 
@@ -205,9 +213,8 @@ Argument SINK is the number provided by the user."
          (sink (completing-read "Sink name: " valid-sinks))) 
     (if (member sink valid-sinks)
         (progn
-          (call-process-shell-command (concat pulsectl-pactl-path
-                                              " set-default-sink "
-                                              sink))
+          (pulsectl--call-pactl (concat "set-default-sink "
+                                        sink))
           (setq pulsectl--current-sink sink))
       (error "Invalid sink name"))))
 
@@ -228,20 +235,19 @@ Argument VOLUME is the volume provided by the user."
                            "\\|[[:digit:]]+dB"
                            "\\|[[:digit:]]+\.[[:digit:]]+")))
     (if (string-match valid-volumes-re volume)
-        (call-process-shell-command (concat pulsectl-pactl-path
-                                            " set-sink-volume "
-                                            pulsectl--current-sink
-                                            " " volume))
+        (pulsectl--call-pactl (concat "set-sink-volume "
+                                      pulsectl--current-sink
+                                      " "
+                                      volume))
       (error "Invalid volume"))))
 
 ;;;###autoload
 (defun pulsectl-toggle-current-sink-mute ()
   "Toggle muting of currently-selected Pulse sink."
   (interactive)
-  (call-process-shell-command (concat pulsectl-pactl-path
-                                      " set-sink-mute "
-                                      pulsectl--current-sink
-                                      " toggle")))
+  (pulsectl--call-pactl (concat "set-sink-mute "
+                                pulsectl--current-sink
+                                " toggle")))
 
 ;;;###autoload
 (defun pulsectl-toggle-sink-mute-by-index (sink)
@@ -253,10 +259,9 @@ Argument SINK is the number provided by the user."
         (valid-sinks (mapcar 'car (pulsectl--get-sinks))))
     (if (member sink valid-sinks)
         (progn
-          (call-process-shell-command (concat pulsectl-pactl-path
-                                              " set-sink-mute "
-                                              sink
-                                              " toggle")))
+          (pulsectl--call-pactl (concat "set-sink-mute "
+                                        sink
+                                        " toggle")))
       (error "Invalid sink index"))))
 
 ;;;###autoload
@@ -267,10 +272,9 @@ Argument SINK is the number provided by the user."
          (sink (completing-read "Sink name: " valid-sinks))) 
     (if (member sink valid-sinks)
         (progn
-          (call-process-shell-command (concat pulsectl-pactl-path
-                                              " set-sink-mute "
-                                              sink
-                                              " toggle")))
+          (pulsectl--call-pactl (concat "set-sink-mute "
+                                        sink
+                                        " toggle")))
       (error "Invalid sink name"))))
 
 
