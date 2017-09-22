@@ -1,4 +1,4 @@
-;;; pulseaudio-control.el --- Use `pactl' to manage PulseAudio volumes.
+;;; pulseaudio-control.el --- Use `pactl' to manage PulseAudio volumes.  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2017  Alexis <flexibeast@gmail.com>
 
