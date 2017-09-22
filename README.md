@@ -5,6 +5,9 @@
 
 `pulseaudio-control` controls PulseAudio volumes from Emacs, via `pactl`.
 
+[[screenshot.png]]
+*Selecting a PulseAudio sink in the minibuffer via the Ivy completion UI.*
+
 ## Table of Contents
 
 - [Installation](#installation)
