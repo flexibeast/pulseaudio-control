@@ -62,4 +62,4 @@ please create a new issue with as much detail as possible, including:
 
 
 ---
-Converted from `pulsectl.el` by [*el2markdown*](https://github.com/Lindydancer/el2markdown).
+Converted from `pulseaudio-control.el` by [*el2markdown*](https://github.com/Lindydancer/el2markdown).
