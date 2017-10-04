@@ -45,7 +45,13 @@
 
 ;; ## Usage
 
-;; Use C-x / to access the `pulseaudio-control' keymap.  The default keybindings in that keymap are:
+;; Initially, the `pulseaudio-control' keymap is not bound to any prefix. You can call the command `pulseaudio-control-default-keybindings' to use the prefix `C-x /' to access the `pulseaudio-control' keymap globally; if you wish to use this prefix by default, add the line:
+
+;;     (pulseaudio-control-default-keybindings)
+
+;; to your init file.
+
+;; The default keybindings in the `pulseaudio-control' keymap are:
 
 ;; * + : Increase the volume of the currently-selected sink by `pulseaudio-control-volume-step' (`pulseaudio-control-increase-volume').
 
@@ -165,6 +171,12 @@ Amount of decrease is specified by `pulseaudio-control-volume-step'."
                                           pulseaudio-control-volume-step)))
 
 ;;;###autoload
+(defun pulseaudio-control-default-keybindings () 
+  "Make `C-x /' the prefix for accessing pulseaudio-control bindings."
+  (interactive)
+  (global-set-key (kbd "C-x /") 'pulseaudio-control-map))
+
+;;;###autoload
 (defun pulseaudio-control-increase-volume ()
   "Increase volume of currently-selected Pulse sink.
 
@@ -281,7 +293,6 @@ Argument SINK is the number provided by the user."
 ;; Default keymap.
 
 (define-prefix-command 'pulseaudio-control-map)
-(global-set-key (kbd "C-x /") 'pulseaudio-control-map)
 (define-key pulseaudio-control-map (kbd "-") 'pulseaudio-control-decrease-volume)
 (define-key pulseaudio-control-map (kbd "+") 'pulseaudio-control-increase-volume)
 (define-key pulseaudio-control-map (kbd "m") 'pulseaudio-control-toggle-current-sink-mute)

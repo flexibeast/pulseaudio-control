@@ -6,7 +6,6 @@
 `pulseaudio-control` controls PulseAudio volumes from Emacs, via `pactl`.
 
 ![Image of selecting a PulseAudio sink in the minibuffer via the Ivy completion UI](screenshot.png)
-
 *Selecting a PulseAudio sink in the minibuffer via the Ivy completion UI.*
 
 ## Table of Contents
@@ -22,7 +21,13 @@ Install [pulseaudio-control from MELPA](http://melpa.org/#/pulseaudio-control), 
 
 ## Usage
 
-Use <kbd>C-x /</kbd> to access the `pulseaudio-control` keymap.  The default keybindings in that keymap are:
+Initially, the `pulseaudio-control` keymap is not bound to any prefix. You can call the command `pulseaudio-control-default-keybindings` to use the prefix <kbd>C-x /</kbd> to access the `pulseaudio-control` keymap globally; if you wish to use this prefix by default, add the line:
+
+    (pulseaudio-control-default-keybindings)
+
+to your init file.
+
+The default keybindings in the `pulseaudio-control` keymap are:
 
 * <kbd>&#0043;</kbd> : Increase the volume of the currently-selected sink by `pulseaudio-control-volume-step` (`pulseaudio-control-increase-volume`).
 
