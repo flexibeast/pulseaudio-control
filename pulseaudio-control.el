@@ -140,7 +140,7 @@ e.g. 'list short sinks'."
   (let ((args `("" nil
                 ,pulseaudio-control-pactl-path
                 nil t nil
-                ,@(split-string command " "))))
+                ,@(append '("--") (split-string command " ")))))
     (apply #'call-process-region args)))
 
 (defun pulseaudio-control--get-sinks ()
