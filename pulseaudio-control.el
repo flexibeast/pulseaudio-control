@@ -1,8 +1,9 @@
 ;;; pulseaudio-control.el --- Use `pactl' to manage PulseAudio volumes.  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2017  Alexis <flexibeast@gmail.com>
+;; Copyright (C) 2017  Alexis <flexibeast@gmail.com>, Ellington Santos <ellingtonsantos@gmail.com>
 
 ;; Author: Alexis <flexibeast@gmail.com>
+;;         Ellington Santos <ellingtonsantos@gmail.com>
 ;; Maintainer: Alexis <flexibeast@gmail.com>
 ;; Created: 2017-08-23
 ;; URL: https://github.com/flexibeast/pulseaudio-control
@@ -123,6 +124,10 @@ The value can be:
   :type 'string
   :group 'pulseaudio-control)
 
+(defcustom pulseaudio-control-volume-verbose t
+  "Display volume after increase or decrease volume."
+  :type 'boolean
+  :group 'pulseaudio-control)
 
 ;; Internal variables.
 
@@ -168,13 +173,31 @@ Amount of decrease is specified by `pulseaudio-control-volume-step'."
   (pulseaudio-control--call-pactl (concat "set-sink-volume "
                                           pulseaudio-control--current-sink
                                           " -"
-                                          pulseaudio-control-volume-step)))
+                                          pulseaudio-control-volume-step))
+  (if pulseaudio-control-volume-verbose
+      (pulseaudio-control-display-volume)))
 
 ;;;###autoload
 (defun pulseaudio-control-default-keybindings () 
   "Make `C-x /' the prefix for accessing pulseaudio-control bindings."
   (interactive)
   (global-set-key (kbd "C-x /") 'pulseaudio-control-map))
+
+;;;###autoload
+(defun pulseaudio-control-display-volume ()
+  "Display volume of currently-selected Pulse sink."
+  (interactive)
+  (let (beg)
+    (with-temp-buffer
+      (pulseaudio-control--call-pactl "list sinks")
+      (goto-char (point-min))
+      (replace-string "%" "%%")
+      (search-backward (concat "Sink #" pulseaudio-control-default-sink))
+      (search-forward "Volume:")
+      (backward-word)
+      (setq beg (point))
+      (move-end-of-line nil)
+      (message (buffer-substring beg (point))))))
 
 ;;;###autoload
 (defun pulseaudio-control-increase-volume ()
@@ -185,7 +208,10 @@ Amount of increase is specified by `pulseaudio-control-volume-step'."
   (pulseaudio-control--call-pactl (concat "set-sink-volume "
                                           pulseaudio-control--current-sink
                                           " +"
-                                          pulseaudio-control-volume-step)))
+                                          pulseaudio-control-volume-step))
+  (if pulseaudio-control-volume-verbose
+      (pulseaudio-control-display-volume)))
+
 
 ;;;###autoload
 (defun pulseaudio-control-select-sink-by-index (sink)
@@ -289,11 +315,11 @@ Argument SINK is the number provided by the user."
                                                   " toggle")))
       (error "Invalid sink name"))))
 
-
 ;; Default keymap.
 
 (define-prefix-command 'pulseaudio-control-map)
 (define-key pulseaudio-control-map (kbd "-") 'pulseaudio-control-decrease-volume)
+(define-key pulseaudio-control-map (kbd "d") 'pulseaudio-control-display-volume)
 (define-key pulseaudio-control-map (kbd "+") 'pulseaudio-control-increase-volume)
 (define-key pulseaudio-control-map (kbd "m") 'pulseaudio-control-toggle-current-sink-mute)
 (define-key pulseaudio-control-map (kbd "x") 'pulseaudio-control-toggle-sink-mute-by-index)
