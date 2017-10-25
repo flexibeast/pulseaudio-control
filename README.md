@@ -49,7 +49,7 @@ The default keybindings in the `pulseaudio-control` keymap are:
 
 * <kbd>n</kbd> : Select a sink to be the current sink, specified by name (`pulseaudio-control-select-sink-by-name`).
 
-* <kbd>d</kbd> : Display volume of the current-selected sink (`pulseaudio-control-display-volume`).
+* <kbd>d</kbd> : Display volume of the currently-selected sink (`pulseaudio-control-display-volume`).
 
 Customisation options, including `pulseaudio-control-volume-step`, are available via the `pulseaudio-control` customize-group.
 
