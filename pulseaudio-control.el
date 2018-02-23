@@ -180,7 +180,22 @@ Amount of decrease is specified by `pulseaudio-control-volume-step'."
       (pulseaudio-control-display-volume)))
 
 ;;;###autoload
-(defun pulseaudio-control-default-keybindings () 
+(defun pulseaudio-control-find-and-set-current-running-sink ()
+  "Set the current running sink via `pactl'."
+  (interactive)
+  (let ((fields-re "^\\(\\S-+\\)\\s-+\\(\\S-+\\).*\\s-+\\([[:upper:]]+\\)$"))
+    (with-temp-buffer
+      (pulseaudio-control--call-pactl "list short sinks")
+      (goto-char (point-min))
+      (while (re-search-forward fields-re nil t)
+        (let ((number (match-string 1))
+	      (status (match-string 3)))
+	  (when (string= status "RUNNING")
+	    (setq pulseaudio-control--current-sink number)))))
+    pulseaudio-control--current-sink))
+
+;;;###autoload
+(defun pulseaudio-control-default-keybindings ()
   "Make `C-x /' the prefix for accessing pulseaudio-control bindings."
   (interactive)
   (global-set-key (kbd "C-x /") 'pulseaudio-control-map))
@@ -194,7 +209,7 @@ Amount of decrease is specified by `pulseaudio-control-volume-step'."
       (pulseaudio-control--call-pactl "list sinks")
       (goto-char (point-min))
       (replace-string "%" "%%")
-      (search-backward (concat "Sink #" pulseaudio-control-default-sink))
+      (search-backward (concat "Sink #" pulseaudio-control--current-sink))
       (search-forward "Volume:")
       (backward-word)
       (setq beg (point))
