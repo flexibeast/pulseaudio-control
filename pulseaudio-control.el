@@ -110,7 +110,8 @@
   :type 'string
   :group 'pulseaudio-control)
 
-(defcustom pulseaudio-control-pactl-path "/usr/bin/pactl"
+(defcustom pulseaudio-control-pactl-path (or (executable-find "pactl")
+                                             "/usr/bin/pactl")
   "Absolute path of `pactl' executable."
   :type '(file :must-match t)
   :group 'pulseaudio-control)
