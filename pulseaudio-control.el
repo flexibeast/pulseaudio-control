@@ -1,9 +1,10 @@
 ;;; pulseaudio-control.el --- Use `pactl' to manage PulseAudio volumes.  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2017  Alexis <flexibeast@gmail.com>, Ellington Santos <ellingtonsantos@gmail.com>
+;; Copyright (C) 2017  Alexis <flexibeast@gmail.com>, Ellington Santos <ellingtonsantos@gmail.com>, Sergey Trofimov <sarg@sarg.org.ru>
 
 ;; Author: Alexis <flexibeast@gmail.com>
 ;;         Ellington Santos <ellingtonsantos@gmail.com>
+;;         Sergey Trofimov <sarg@sarg.org.ru>
 ;; Maintainer: Alexis <flexibeast@gmail.com>
 ;; Created: 2017-08-23
 ;; URL: https://github.com/flexibeast/pulseaudio-control
@@ -110,6 +111,11 @@
   :type 'string
   :group 'pulseaudio-control)
 
+(defcustom pulseaudio-control-default-source "0"
+  "Default Pulse source index to act on."
+  :type 'string
+  :group 'pulseaudio-control)
+
 (defcustom pulseaudio-control-pactl-path (or (executable-find "pactl")
                                              "/usr/bin/pactl")
   "Absolute path of `pactl' executable."
@@ -136,6 +142,9 @@
 
 (defvar pulseaudio-control--current-sink pulseaudio-control-default-sink
   "String containing index of currently-selected Pulse sink.")
+
+(defvar pulseaudio-control--current-source pulseaudio-control-default-source
+  "String containing index of currently-selected Pulse source.")
 
 
 ;; Internal functions.
@@ -289,6 +298,14 @@ Argument VOLUME is the volume provided by the user."
   (interactive)
   (pulseaudio-control--call-pactl (concat "set-sink-mute "
                                           pulseaudio-control--current-sink
+                                          " toggle")))
+
+;;;###autoload
+(defun pulseaudio-control-toggle-current-source-mute ()
+  "Toggle muting of currently-selected Pulse source."
+  (interactive)
+  (pulseaudio-control--call-pactl (concat "set-source-mute "
+                                          pulseaudio-control--current-source
                                           " toggle")))
 
 ;;;###autoload
