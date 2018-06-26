@@ -194,7 +194,8 @@ Amount of decrease is specified by `pulseaudio-control-volume-step'."
     (with-temp-buffer
       (pulseaudio-control--call-pactl "list sinks")
       (goto-char (point-min))
-      (replace-string "%" "%%")
+      (while (search-forward "%" nil t)
+        (replace-match "%%"))
       (search-backward (concat "Sink #" pulseaudio-control-default-sink))
       (search-forward "Volume:")
       (backward-word)
