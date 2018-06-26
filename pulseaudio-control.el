@@ -119,11 +119,11 @@
 (defcustom pulseaudio-control-volume-step "10%"
   "Step to use when increasing or decreasing volume.
 
-The value can be:
+  The value can be:
 
-* a percentage, e.g. '10%';
-* in decibels, e.g. '2dB';
-* a linear factor, e.g. '0.9' or '1.1'."
+  * a percentage, e.g. '10%';
+  * in decibels, e.g. '2dB';
+  * a linear factor, e.g. '0.9' or '1.1'."
   :type 'string
   :group 'pulseaudio-control)
 
@@ -143,8 +143,8 @@ The value can be:
 (defun pulseaudio-control--call-pactl (command)
   "Call `pactl' with COMMAND as its arguments.
 
-COMMAND is a single string separated by spaces,
-e.g. 'list short sinks'."
+  COMMAND is a single string separated by spaces,
+  e.g. 'list short sinks'."
   (let ((args `("" nil
                 ,pulseaudio-control-pactl-path
                 nil t nil
