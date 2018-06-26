@@ -321,6 +321,7 @@ Argument SINK is the number provided by the user."
 
 ;; Default keymap.
 
+(defvar pulseaudio-control-map)
 (define-prefix-command 'pulseaudio-control-map)
 (define-key pulseaudio-control-map (kbd "-") 'pulseaudio-control-decrease-volume)
 (define-key pulseaudio-control-map (kbd "d") 'pulseaudio-control-display-volume)
