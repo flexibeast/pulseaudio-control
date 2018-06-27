@@ -146,6 +146,8 @@
 (defvar pulseaudio-control--current-source pulseaudio-control-default-source
   "String containing index of currently-selected Pulse source.")
 
+(defvar pulseaudio-control--volume-maximum "150%")
+
 
 ;; Internal functions.
 
@@ -159,6 +161,19 @@
                 nil t nil
                 ,@(append '("--") (split-string command " ")))))
     (apply #'call-process-region args)))
+
+(defun pulseaudio-control--get-current-volume ()
+  "Get volume of currently-selected sink."
+  (let (beg)
+    (with-temp-buffer
+      (pulseaudio-control--call-pactl "list sinks")
+      (goto-char (point-min))
+      (search-forward (concat "Sink #" pulseaudio-control--current-sink))
+      (search-forward "Volume:")
+      (backward-word)
+      (setq beg (point))
+      (move-end-of-line nil)
+      (buffer-substring beg (point)))))
 
 (defun pulseaudio-control--get-sinks ()
   "Internal function; get a list of Pulse sinks via `pactl'."
@@ -199,18 +214,8 @@ Amount of decrease is specified by `pulseaudio-control-volume-step'."
 (defun pulseaudio-control-display-volume ()
   "Display volume of currently-selected Pulse sink."
   (interactive)
-  (let (beg)
-    (with-temp-buffer
-      (pulseaudio-control--call-pactl "list sinks")
-      (goto-char (point-min))
-      (while (search-forward "%" nil t)
-        (replace-match "%%"))
-      (search-backward (concat "Sink #" pulseaudio-control-default-sink))
-      (search-forward "Volume:")
-      (backward-word)
-      (setq beg (point))
-      (move-end-of-line nil)
-      (message (buffer-substring beg (point))))))
+  (let ((msg (replace-regexp-in-string "%" "%%" (pulseaudio-control--get-current-volume))))
+    (message msg)))
 
 ;;;###autoload
 (defun pulseaudio-control-increase-volume ()
@@ -218,12 +223,41 @@ Amount of decrease is specified by `pulseaudio-control-volume-step'."
 
 Amount of increase is specified by `pulseaudio-control-volume-step'."
   (interactive)
-  (pulseaudio-control--call-pactl (concat "set-sink-volume "
-                                          pulseaudio-control--current-sink
-                                          " +"
-                                          pulseaudio-control-volume-step))
-  (if pulseaudio-control-volume-verbose
-      (pulseaudio-control-display-volume)))
+  (let* ((volume-step (progn
+                        (string-match "\\([[:digit:]]+\\)%" pulseaudio-control-volume-step)
+                        (string-to-number (match-string 1 pulseaudio-control-volume-step))))
+         (volume-max (progn
+                       (string-match "\\([[:digit:]]+\\)%" pulseaudio-control--volume-maximum)
+                       (string-to-number (match-string 1 pulseaudio-control--volume-maximum))))
+         (volumes-current (pulseaudio-control--get-current-volume))
+         (volumes-re-component "\\([[:digit:]]+\\) / \\([[:digit:]]+\\)% / \\([[:digit:]]+\.[[:digit:]]+\\) dB")
+         (volumes-re (concat volumes-re-component
+                             ".+"
+                             volumes-re-component))
+         (volumes-alist (progn
+                          (string-match volumes-re volumes-current)
+                          `(("raw-left" . ,(string-to-number (match-string 1 volumes-current)))
+                            ("percentage-left" . ,(string-to-number (match-string 2 volumes-current)))
+                            ("db-left" . ,(string-to-number (match-string 3 volumes-current)))
+                            ("raw-right" . ,(string-to-number (match-string 4 volumes-current)))
+                            ("percentage-right" . ,(string-to-number (match-string 5 volumes-current)))
+                            ("db-right" . ,(string-to-number (match-string 6 volumes-current)))))))
+    (if (or (> (+ (cdr (assoc "percentage-left" volumes-alist)) volume-step)
+               volume-max)
+            (> (+ (cdr (assoc "percentage-right" volumes-alist)) volume-step)
+               volume-max))
+        ;; Clamp volume to value of pulseaudio-control--volume-maximum.
+        (pulseaudio-control--call-pactl (concat "set-sink-volume "
+                                                pulseaudio-control--current-sink
+                                                " "
+                                                pulseaudio-control--volume-maximum))
+      ;; Increase volume by pulseaudio-control-volume-step.
+      (pulseaudio-control--call-pactl (concat "set-sink-volume "
+                                              pulseaudio-control--current-sink
+                                              " +"
+                                              pulseaudio-control-volume-step)))
+    (if pulseaudio-control-volume-verbose
+        (pulseaudio-control-display-volume))))
 
 
 ;;;###autoload
