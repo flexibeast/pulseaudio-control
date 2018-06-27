@@ -230,18 +230,18 @@ Amount of increase is specified by `pulseaudio-control-volume-step'."
                        (string-match "\\([[:digit:]]+\\)%" pulseaudio-control--volume-maximum)
                        (string-to-number (match-string 1 pulseaudio-control--volume-maximum))))
          (volumes-current (pulseaudio-control--get-current-volume))
-         (volumes-re-component "\\([[:digit:]]+\\) / \\([[:digit:]]+\\)% / \\([[:digit:]]+\.[[:digit:]]+\\) dB")
+         (volumes-re-component "\\([[:digit:]]+\\)\\s-+/\\s-+\\([[:digit:]]+\\)%\\s-+/\\s-+\\(-?[[:digit:]]+\\(\.[[:digit:]]+\\)?\\) dB")
          (volumes-re (concat volumes-re-component
-                             ".+"
+                             "[^[:digit:]]+"
                              volumes-re-component))
          (volumes-alist (progn
                           (string-match volumes-re volumes-current)
                           `(("raw-left" . ,(string-to-number (match-string 1 volumes-current)))
                             ("percentage-left" . ,(string-to-number (match-string 2 volumes-current)))
                             ("db-left" . ,(string-to-number (match-string 3 volumes-current)))
-                            ("raw-right" . ,(string-to-number (match-string 4 volumes-current)))
-                            ("percentage-right" . ,(string-to-number (match-string 5 volumes-current)))
-                            ("db-right" . ,(string-to-number (match-string 6 volumes-current)))))))
+                            ("raw-right" . ,(string-to-number (match-string 5 volumes-current)))
+                            ("percentage-right" . ,(string-to-number (match-string 6 volumes-current)))
+                            ("db-right" . ,(string-to-number (match-string 7 volumes-current)))))))
     (if (or (> (+ (cdr (assoc "percentage-left" volumes-alist)) volume-step)
                volume-max)
             (> (+ (cdr (assoc "percentage-right" volumes-alist)) volume-step)
