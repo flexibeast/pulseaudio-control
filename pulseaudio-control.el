@@ -151,6 +151,18 @@
 
 ;; Internal functions.
 
+(defun pulseaudio-control--get-default-sink ()
+  "Get @DEFAULT_SINK@ value."
+
+  (let (beg)
+    (with-temp-buffer
+      (pulseaudio-control--call-pactl "info")
+      (goto-char (point-min))
+      (search-forward (concat "Default Sink: "))
+      (setq beg (point))
+      (move-end-of-line nil)
+      (buffer-substring beg (point)))))
+
 (defun pulseaudio-control--call-pactl (command)
   "Call `pactl' with COMMAND as its arguments.
 
@@ -168,7 +180,9 @@
     (with-temp-buffer
       (pulseaudio-control--call-pactl "list sinks")
       (goto-char (point-min))
-      (search-forward (concat "Sink #" pulseaudio-control--current-sink))
+      (search-forward (if (string= "@DEFAULT_SINK@" pulseaudio-control--current-sink)
+                          (pulseaudio-control--get-default-sink)
+                        pulseaudio-control--current-sink))
       (search-forward "Volume:")
       (backward-word)
       (setq beg (point))
@@ -287,7 +301,7 @@ Argument SINK is the number provided by the user."
           ;;
           (pulseaudio-control--call-pactl (concat "set-default-sink "
                                                   sink))
-          (setq pulseaudio-control--current-sink sink))
+          (setq pulseaudio-control--current-sink (alist-get sink valid-sinks)))
       (error "Invalid sink index"))))
 
 ;;;###autoload
