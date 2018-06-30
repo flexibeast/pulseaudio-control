@@ -138,6 +138,7 @@
   :type 'boolean
   :group 'pulseaudio-control)
 
+
 ;; Internal variables.
 
 (defvar pulseaudio-control--current-sink pulseaudio-control-default-sink
@@ -152,16 +153,25 @@
 ;; Internal functions.
 
 (defun pulseaudio-control--get-default-sink ()
-  "Get @DEFAULT_SINK@ value."
+  "Get index of DEFAULT_SINK."
 
-  (let (beg)
+  (let ((beg 0)
+        (sink-name "")
+        (sinks-list '()))
     (with-temp-buffer
       (pulseaudio-control--call-pactl "info")
       (goto-char (point-min))
-      (search-forward (concat "Default Sink: "))
+      (search-forward "Default Sink: ")
       (setq beg (point))
       (move-end-of-line nil)
-      (buffer-substring beg (point)))))
+      (setq sink-name (buffer-substring beg (point))))
+    (with-temp-buffer
+      (pulseaudio-control--call-pactl "list short sinks")
+      (goto-char (point-min))
+      (while (re-search-forward "\\([[:digit:]]+\\)\\s-+\\(\\S-+\\)" nil t)
+        (setq sinks-list
+              (append sinks-list `((,(match-string 1) . ,(match-string 2)))))))
+    (car (rassoc sink-name sinks-list))))
 
 (defun pulseaudio-control--call-pactl (command)
   "Call `pactl' with COMMAND as its arguments.
