@@ -77,6 +77,8 @@
 
 ;; * d : Display volume of the currently-selected sink (`pulseaudio-control-display-volume').
 
+;; * ] : Toggle use of @DEFAULT_SINK@ for volume operations (`pulseaudio-control-toggle-use-of-default-sink')
+
 ;; Customisation options, including `pulseaudio-control-volume-step', are available via the `pulseaudio-control' customize-group.
 
 ;; ## Issues / bugs
@@ -120,6 +122,11 @@
                                              "/usr/bin/pactl")
   "Absolute path of `pactl' executable."
   :type '(file :must-match t)
+  :group 'pulseaudio-control)
+
+(defcustom pulseaudio-control-use-default-sink nil
+  "Whether to use @DEFAULT_SINK@ for volume operations."
+  :type 'boolean
   :group 'pulseaudio-control)
 
 (defcustom pulseaudio-control-volume-step "10%"
@@ -187,12 +194,11 @@
 (defun pulseaudio-control--get-current-volume ()
   "Get volume of currently-selected sink."
   (let (beg)
+    (pulseaudio-control--maybe-update-current-sink)
     (with-temp-buffer
       (pulseaudio-control--call-pactl "list sinks")
       (goto-char (point-min))
-      (search-forward (if (string= "@DEFAULT_SINK@" pulseaudio-control--current-sink)
-                          (pulseaudio-control--get-default-sink)
-                        pulseaudio-control--current-sink))
+      (search-forward (concat "Sink #" pulseaudio-control--current-sink))
       (search-forward "Volume:")
       (backward-word)
       (setq beg (point))
@@ -212,6 +218,11 @@
           (setq sinks (append sinks (list `(,number . ,name)))))))
     sinks))
 
+(defun pulseaudio-control--maybe-update-current-sink ()
+  "If required, update value of `pulseaudio-control--current-sink'."
+  (if pulseaudio-control-use-default-sink
+      (setq pulseaudio-control--current-sink (pulseaudio-control--get-default-sink))))
+
 
 ;; User-facing functions.
 
@@ -221,6 +232,7 @@
 
 Amount of decrease is specified by `pulseaudio-control-volume-step'."
   (interactive)
+  (pulseaudio-control--maybe-update-current-sink)
   (pulseaudio-control--call-pactl (concat "set-sink-volume "
                                           pulseaudio-control--current-sink
                                           " -"
@@ -247,6 +259,7 @@ Amount of decrease is specified by `pulseaudio-control-volume-step'."
 
 Amount of increase is specified by `pulseaudio-control-volume-step'."
   (interactive)
+  (pulseaudio-control--maybe-update-current-sink)
   (let* ((volume-step (progn
                         (string-match "\\([[:digit:]]+\\)%" pulseaudio-control-volume-step)
                         (string-to-number (match-string 1 pulseaudio-control-volume-step))))
@@ -339,6 +352,7 @@ The value can be:
 
 Argument VOLUME is the volume provided by the user." 
   (interactive "MVolume: ")
+  (pulseaudio-control--maybe-update-current-sink)
   (let ((valid-volumes-re (concat
                            "[[:digit:]]+%"
                            "\\|[[:digit:]]+dB"
@@ -354,6 +368,7 @@ Argument VOLUME is the volume provided by the user."
 (defun pulseaudio-control-toggle-current-sink-mute ()
   "Toggle muting of currently-selected Pulse sink."
   (interactive)
+  (pulseaudio-control--maybe-update-current-sink)
   (pulseaudio-control--call-pactl (concat "set-sink-mute "
                                           pulseaudio-control--current-sink
                                           " toggle")))
@@ -394,6 +409,15 @@ Argument SINK is the number provided by the user."
                                                   " toggle")))
       (error "Invalid sink name"))))
 
+;;;###autoload
+(defun pulseaudio-control-toggle-use-of-default-sink ()
+  "Toggle use of @DEFAULT_SINK@ for volume operations."
+  (interactive)
+  (setq pulseaudio-control-use-default-sink (not pulseaudio-control-use-default-sink))
+  (if pulseaudio-control-use-default-sink
+      (message "Using @DEFAULT_SINK@ for volume operations")
+    (message "No longer using @DEFAULT_SINK@ for volume operations ")))
+
 ;; Default keymap.
 
 (defvar pulseaudio-control-map)
@@ -404,6 +428,7 @@ Argument SINK is the number provided by the user."
 (define-key pulseaudio-control-map (kbd "m") 'pulseaudio-control-toggle-current-sink-mute)
 (define-key pulseaudio-control-map (kbd "x") 'pulseaudio-control-toggle-sink-mute-by-index)
 (define-key pulseaudio-control-map (kbd "e") 'pulseaudio-control-toggle-sink-mute-by-name)
+(define-key pulseaudio-control-map (kbd "]") 'pulseaudio-control-toggle-use-of-default-sink)
 (define-key pulseaudio-control-map (kbd "i") 'pulseaudio-control-select-sink-by-index)
 (define-key pulseaudio-control-map (kbd "n") 'pulseaudio-control-select-sink-by-name)
 (define-key pulseaudio-control-map (kbd "v") 'pulseaudio-control-set-volume)
