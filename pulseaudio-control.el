@@ -324,7 +324,7 @@ Argument SINK is the number provided by the user."
           ;;
           (pulseaudio-control--call-pactl (concat "set-default-sink "
                                                   sink))
-          (setq pulseaudio-control--current-sink (alist-get sink valid-sinks)))
+          (setq pulseaudio-control--current-sink sink))
       (error "Invalid sink index"))))
 
 ;;;###autoload
