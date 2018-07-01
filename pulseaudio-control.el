@@ -331,13 +331,13 @@ Argument SINK is the number provided by the user."
 (defun pulseaudio-control-select-sink-by-name ()
   "Select which Pulse sink to act on, by name."
   (interactive)
-  (let* ((valid-sinks (mapcar 'cdr (pulseaudio-control--get-sinks)))
-         (sink (completing-read "Sink name: " valid-sinks))) 
-    (if (member sink valid-sinks)
+  (let* ((valid-sinks (pulseaudio-control--get-sinks))
+         (sink (completing-read "Sink name: " (mapcar 'cdr valid-sinks))))
+    (if (member sink (mapcar 'cdr valid-sinks))
         (progn
           (pulseaudio-control--call-pactl (concat "set-default-sink "
                                                   sink))
-          (setq pulseaudio-control--current-sink sink))
+          (setq pulseaudio-control--current-sink (car (rassoc sink valid-sinks))))
       (error "Invalid sink name"))))
 
 ;;;###autoload
