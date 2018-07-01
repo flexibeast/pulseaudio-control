@@ -298,16 +298,16 @@ Amount of increase is specified by `pulseaudio-control-volume-step'."
 
 
 ;;;###autoload
-(defun pulseaudio-control-select-sink-by-index (sink)
+(defun pulseaudio-control-select-sink-by-index ()
   "Select which Pulse sink to act on, by numeric index.
 
 Accepts number as prefix argument.
 
 Argument SINK is the number provided by the user."
-  (interactive "NSink index: ")
-  (let ((sink (number-to-string sink))
-        (valid-sinks (mapcar 'car (pulseaudio-control--get-sinks))))
-    (if (member sink valid-sinks)
+  (interactive)
+  (let* ((valid-sinks (pulseaudio-control--get-sinks))
+         (sink (completing-read "Sink index: " (mapcar 'car valid-sinks))))
+    (if (member sink (mapcar 'car valid-sinks))
         (progn
           ;;
           ;; NOTE:
