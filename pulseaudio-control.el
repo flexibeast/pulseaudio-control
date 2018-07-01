@@ -322,6 +322,12 @@ Argument SINK is the number provided by the user."
           ;; However, as at 20170828, it seems to work with
           ;; a numeric index also.
           ;;
+          ;; 20180701: The man page for pulse-cli-syntax in the same
+          ;;           package states, for `set-default-sink':
+          ;;
+          ;;           "You may specify the sink (resp. source) by its index
+          ;;            in the sink (resp. source) list or by its name."
+          ;;
           (pulseaudio-control--call-pactl (concat "set-default-sink "
                                                   sink))
           (setq pulseaudio-control--current-sink sink))
