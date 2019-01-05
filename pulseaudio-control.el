@@ -77,7 +77,7 @@
 
 ;; * d : Display volume of the currently-selected sink (`pulseaudio-control-display-volume').
 
-;; * ] : Toggle use of @DEFAULT_SINK@ for volume operations (`pulseaudio-control-toggle-use-of-default-sink')
+;; * ] : Toggle use of @DEFAULT_SINK@ for volume operations (`pulseaudio-control-toggle-use-of-default-sink').
 
 ;; Customisation options, including `pulseaudio-control-volume-step', are available via the `pulseaudio-control' customize-group.
 

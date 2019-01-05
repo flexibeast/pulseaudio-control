@@ -51,6 +51,8 @@ The default keybindings in the `pulseaudio-control` keymap are:
 
 * <kbd>d</kbd> : Display volume of the currently-selected sink (`pulseaudio-control-display-volume`).
 
+* <kbd>]</kbd> : Toggle use of @DEFAULT_SINK@ for volume operations (`pulseaudio-control-toggle-use-of-default-sink`).
+
 Customisation options, including `pulseaudio-control-volume-step`, are available via the `pulseaudio-control` customize-group.
 
 ## Issues / bugs
