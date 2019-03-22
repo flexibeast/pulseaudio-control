@@ -1,6 +1,6 @@
 ;;; pulseaudio-control.el --- Use `pactl' to manage PulseAudio volumes.  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2017-2018  Alexis <flexibeast@gmail.com>, Ellington Santos <ellingtonsantos@gmail.com>, Sergey Trofimov <sarg@sarg.org.ru>
+;; Copyright (C) 2017-2019  Alexis <flexibeast@gmail.com>, Ellington Santos <ellingtonsantos@gmail.com>, Sergey Trofimov <sarg@sarg.org.ru>
 
 ;; Author: Alexis <flexibeast@gmail.com>
 ;;         Ellington Santos <ellingtonsantos@gmail.com>
@@ -223,6 +223,48 @@
   (if pulseaudio-control-use-default-sink
       (setq pulseaudio-control--current-sink (pulseaudio-control--get-default-sink))))
 
+(defun pulseaudio-control--get-sink-inputs ()
+  "Get a list of Pulse sink inputs via `pactl'."
+  (with-temp-buffer
+    (let ((sink-inputs '())
+          input-id props)
+
+      (pulseaudio-control--call-pactl "list sink-inputs")
+      (goto-char (point-min))
+
+      (while (re-search-forward "^Sink Input #\\([[:digit:]]+\\)$" nil t)
+        (setq input-id (match-string 1))
+        (setq props '())
+
+        (while (and
+                (= (forward-line 1) 0)
+                (or (and ; special case \t      balance 0.00
+                     (re-search-forward "^\t\s+balance \\(.+\\)$" (line-end-position) t)
+                     (push (cons "balance" (match-string 1)) props))
+
+                    (and ; line format \tKey: value
+                     (re-search-forward "^\t\\([^:]+\\): \\(.+\\)$" (line-end-position) t)
+                     (push (cons (match-string 1) (match-string 2)) props))
+                    )))
+
+        ; Now properties in format \t\tdotted.key = "value"
+        (re-search-forward "^\tProperties:$")
+        (while (and
+                (= (forward-line 1) 0)
+                (re-search-forward "^\t\t\\([^=]+\\)\s=\s\"\\(.+\\)\"$" (line-end-position) t)
+                (push (cons (match-string 1) (match-string 2)) props)))
+
+        (push (cons input-id props) sink-inputs))
+    sink-inputs)))
+
+(defun pulseaudio-control--set-sink-input-mute (id val)
+  "Set mute status for sink-input with ID to VAL.
+nil or \"0\" - unmute
+t or \"1\"   - mute
+\"toggle\"   - toggle"
+  (pulseaudio-control--call-pactl
+   (concat "set-sink-input-mute " id " "
+           (if (stringp val) val (if val "1" "0")))))
 
 ;; User-facing functions.
 
