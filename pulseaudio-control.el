@@ -466,6 +466,25 @@ Argument SINK is the number provided by the user."
       (message "Using @DEFAULT_SINK@ for volume operations")
     (message "No longer using @DEFAULT_SINK@ for volume operations ")))
 
+(defun pulseaudio-control-toggle-sink-input-mute-by-index (index)
+  "Toggle muting of Pulse sink-input by index."
+  (interactive
+   (list
+    (let* ((valid-sink-inputs (pulseaudio-control--get-sink-inputs))
+           (completion-choices (mapcar (lambda (el)
+                                         (cons (concat
+                                                (if (string= "yes" (alist-get "Mute" (cdr el) nil nil #'string=)) "🔇" "🔊")
+                                                " "
+                                                (alist-get "application.name" (cdr el) nil nil #'string=)
+                                                " (" (alist-get "application.process.binary" (cdr el) nil nil #'string=)
+                                                " pid " (alist-get "application.process.id" (cdr el) nil nil #'string=) ")")
+                                               (car el)))
+                                       (pulseaudio-control--get-sink-inputs)))
+           (sink-input (completing-read "Sink input name: " completion-choices)))
+      (cdr (assoc sink-input completion-choices)))))
+
+    (pulseaudio-control--set-sink-input-mute index "toggle"))
+
 ;; Default keymap.
 
 (defvar pulseaudio-control-map)
