@@ -250,8 +250,7 @@ Amount of decrease is specified by `pulseaudio-control-volume-step'."
 (defun pulseaudio-control-display-volume ()
   "Display volume of currently-selected Pulse sink."
   (interactive)
-  (let ((msg (replace-regexp-in-string "%" "%%" (pulseaudio-control--get-current-volume))))
-    (message msg)))
+    (message "%s" (pulseaudio-control--get-current-volume)))
 
 ;;;###autoload
 (defun pulseaudio-control-increase-volume ()
@@ -267,18 +266,26 @@ Amount of increase is specified by `pulseaudio-control-volume-step'."
                        (string-match "\\([[:digit:]]+\\)%" pulseaudio-control--volume-maximum)
                        (string-to-number (match-string 1 pulseaudio-control--volume-maximum))))
          (volumes-current (pulseaudio-control--get-current-volume))
-         (volumes-re-component "\\([[:digit:]]+\\)\\s-+/\\s-+\\([[:digit:]]+\\)%\\s-+/\\s-+\\(-?[[:digit:]]+\\(\.[[:digit:]]+\\)?\\) dB")
-         (volumes-re (concat volumes-re-component
-                             "[^[:digit:]]+"
-                             volumes-re-component))
+         (volumes-re-component (rx (group (1+ digit))
+                                   (1+ space) "/" (1+ space)
+                                   (group (1+ digit)) "%"
+                                   (1+ space) "/" (1+ space)
+                                   (group (+? anything)) " dB"))
+         (volumes-re (concat volumes-re-component "[^[:digit:]]+" volumes-re-component))
          (volumes-alist (progn
                           (string-match volumes-re volumes-current)
                           `(("raw-left" . ,(string-to-number (match-string 1 volumes-current)))
                             ("percentage-left" . ,(string-to-number (match-string 2 volumes-current)))
-                            ("db-left" . ,(string-to-number (match-string 3 volumes-current)))
-                            ("raw-right" . ,(string-to-number (match-string 5 volumes-current)))
-                            ("percentage-right" . ,(string-to-number (match-string 6 volumes-current)))
-                            ("db-right" . ,(string-to-number (match-string 7 volumes-current)))))))
+                            ("db-left" . ,(if-let ((match (match-string 3 volumes-current))
+                                                   ((string= "-inf" match)))
+                                              -1.0e+INF
+                                            (string-to-number match)))
+                            ("raw-right" . ,(string-to-number (match-string 4 volumes-current)))
+                            ("percentage-right" . ,(string-to-number (match-string 5 volumes-current)))
+                            ("db-right" . ,(if-let ((match (match-string 6 volumes-current))
+                                                    ((string= "-inf" match)))
+                                               -1.0e+INF
+                                             (string-to-number match)))))))
     (if (or (> (+ (cdr (assoc "percentage-left" volumes-alist)) volume-step)
                volume-max)
             (> (+ (cdr (assoc "percentage-right" volumes-alist)) volume-step)
