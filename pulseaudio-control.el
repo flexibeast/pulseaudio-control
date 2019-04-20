@@ -241,6 +241,48 @@ number is required for the calculations performed by
   (if pulseaudio-control-use-default-sink
       (setq pulseaudio-control--current-sink (pulseaudio-control--get-default-sink))))
 
+(defun pulseaudio-control--get-sink-inputs ()
+  "Get a list of Pulse sink inputs via `pactl'."
+  (with-temp-buffer
+    (let ((sink-inputs '())
+          input-id props)
+
+      (pulseaudio-control--call-pactl "list sink-inputs")
+      (goto-char (point-min))
+
+      (while (re-search-forward "^Sink Input #\\([[:digit:]]+\\)$" nil t)
+        (setq input-id (match-string 1))
+        (setq props '())
+
+        (while (and
+                (= (forward-line 1) 0)
+                (or (and ; special case \t      balance 0.00
+                     (re-search-forward "^\t\s+balance \\(.+\\)$" (line-end-position) t)
+                     (push (cons "balance" (match-string 1)) props))
+
+                    (and ; line format \tKey: value
+                     (re-search-forward "^\t\\([^:]+\\): \\(.+\\)$" (line-end-position) t)
+                     (push (cons (match-string 1) (match-string 2)) props))
+                    )))
+
+        ; Now properties in format \t\tdotted.key = "value"
+        (re-search-forward "^\tProperties:$")
+        (while (and
+                (= (forward-line 1) 0)
+                (re-search-forward "^\t\t\\([^=]+\\)\s=\s\"\\(.+\\)\"$" (line-end-position) t)
+                (push (cons (match-string 1) (match-string 2)) props)))
+
+        (push (cons input-id props) sink-inputs))
+    sink-inputs)))
+
+(defun pulseaudio-control--set-sink-input-mute (id val)
+  "Set mute status for sink-input with ID to VAL.
+nil or \"0\" - unmute
+t or \"1\"   - mute
+\"toggle\"   - toggle"
+  (pulseaudio-control--call-pactl
+   (concat "set-sink-input-mute " id " "
+           (if (stringp val) val (if val "1" "0")))))
 
 ;; User-facing functions.
 
@@ -508,6 +550,25 @@ Argument SINK is the number provided by the user."
   (if pulseaudio-control-use-default-sink
       (message "Using @DEFAULT_SINK@ for volume operations")
     (message "No longer using @DEFAULT_SINK@ for volume operations ")))
+
+(defun pulseaudio-control-toggle-sink-input-mute-by-index (index)
+  "Toggle muting of Pulse sink-input by index."
+  (interactive
+   (list
+    (let* ((valid-sink-inputs (pulseaudio-control--get-sink-inputs))
+           (completion-choices (mapcar (lambda (el)
+                                         (cons (concat
+                                                (if (string= "yes" (alist-get "Mute" (cdr el) nil nil #'string=)) "🔇" "🔊")
+                                                " "
+                                                (alist-get "application.name" (cdr el) nil nil #'string=)
+                                                " (" (alist-get "application.process.binary" (cdr el) nil nil #'string=)
+                                                " pid " (alist-get "application.process.id" (cdr el) nil nil #'string=) ")")
+                                               (car el)))
+                                       (pulseaudio-control--get-sink-inputs)))
+           (sink-input (completing-read "Sink input name: " completion-choices)))
+      (cdr (assoc sink-input completion-choices)))))
+
+    (pulseaudio-control--set-sink-input-mute index "toggle"))
 
 ;; Default keymap.
 
