@@ -224,7 +224,7 @@ number is required for the calculations performed by
       (buffer-substring beg (point)))))
 
 (defun pulseaudio-control--get-current-mute ()
-  "Get volume of currently-selected sink."
+  "Get mute status of currently-selected sink."
   (let (beg)
     (pulseaudio-control--maybe-update-current-sink)
     (with-temp-buffer
@@ -521,7 +521,6 @@ Argument VOLUME is the volume provided by the user."
                                           " toggle"))
   (if pulseaudio-control-volume-verbose
       (pulseaudio-control-display-volume)))
-
 
 ;;;###autoload
 (defun pulseaudio-control-toggle-current-source-mute ()
