@@ -223,6 +223,20 @@ number is required for the calculations performed by
       (move-end-of-line nil)
       (buffer-substring beg (point)))))
 
+(defun pulseaudio-control--get-current-mute ()
+  "Get mute status of currently-selected sink."
+  (let (beg)
+    (pulseaudio-control--maybe-update-current-sink)
+    (with-temp-buffer
+      (pulseaudio-control--call-pactl "list sinks")
+      (goto-char (point-min))
+      (search-forward (concat "Sink #" pulseaudio-control--current-sink))
+      (search-forward "Mute:")
+      (backward-word)
+      (setq beg (point))
+      (move-end-of-line nil)
+      (buffer-substring beg (point)))))
+
 (defun pulseaudio-control--get-sinks ()
   "Internal function; get a list of Pulse sinks via `pactl'."
   (let ((fields-re "^\\(\\S-+\\)\\s-+\\(\\S-+\\)")
@@ -310,8 +324,9 @@ Amount of decrease is specified by `pulseaudio-control-volume-step'."
 (defun pulseaudio-control-display-volume ()
   "Display volume of currently-selected Pulse sink."
   (interactive)
-  (let ((msg (replace-regexp-in-string "%" "%%" (pulseaudio-control--get-current-volume))))
-    (message msg)))
+  (let ((volume (replace-regexp-in-string "%" "%%" (pulseaudio-control--get-current-volume)))
+	(mute (pulseaudio-control--get-current-mute)))
+    (message (concat volume "   |   " mute))))
 
 ;;;###autoload
 (defun pulseaudio-control-increase-volume ()
@@ -419,7 +434,6 @@ Amount of increase is specified by `pulseaudio-control-volume-step'."
                                                   pulseaudio-control--current-sink
                                                   " +"
                                                   pulseaudio-control-volume-step)))))
-
     (if pulseaudio-control-volume-verbose
         (pulseaudio-control-display-volume))))
 
@@ -504,7 +518,9 @@ Argument VOLUME is the volume provided by the user."
   (pulseaudio-control--maybe-update-current-sink)
   (pulseaudio-control--call-pactl (concat "set-sink-mute "
                                           pulseaudio-control--current-sink
-                                          " toggle")))
+                                          " toggle"))
+  (if pulseaudio-control-volume-verbose
+      (pulseaudio-control-display-volume)))
 
 ;;;###autoload
 (defun pulseaudio-control-toggle-current-source-mute ()
