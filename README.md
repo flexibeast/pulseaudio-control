@@ -1,6 +1,6 @@
 # pulseaudio-control - Use `pactl` to manage PulseAudio volumes
 
-*Author:* Alexis <flexibeast@gmail.com><br>
+*Author:* Alexis <flexibeast@gmail.com>, Ellington Santos <ellingtonsantos@gmail.com>, Sergey Trofimov <sarg@sarg.org.ru><br>
 *Version:* 0.1<br>
 
 `pulseaudio-control` controls PulseAudio volumes from Emacs, via `pactl`.
