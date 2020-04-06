@@ -226,11 +226,14 @@ number is required for the calculations performed by
 
   COMMAND is a single string separated by spaces,
   e.g. 'list short sinks'."
-  (let ((args `("" nil
+  (let ((locale (getenv "LC_ALL"))
+        (args `("" nil
                 ,pulseaudio-control-pactl-path
                 nil t nil
                 ,@(append '("--") (split-string command " ")))))
-    (apply #'call-process-region args)))
+    (setenv "LC_ALL" "C")
+    (apply #'call-process-region args)
+    (setenv "LC_ALL" locale)))
 
 (defun pulseaudio-control--get-current-volume ()
   "Get volume of currently-selected sink."
