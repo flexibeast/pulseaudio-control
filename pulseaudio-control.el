@@ -408,7 +408,7 @@ Amount of increase is specified by `pulseaudio-control-volume-step'."
            "\\s-+/\\s-+"
            "\\(-?\\([[:digit:]]+\\(\\.[[:digit:]]+\\)?\\)\\|-inf\\) dB"))
          (volumes-re (concat volumes-re-component
-                             "[^[:digit:]]+"
+                             "[^:]+:\\s-+"
                              volumes-re-component))
          (volumes-alist
           (progn
