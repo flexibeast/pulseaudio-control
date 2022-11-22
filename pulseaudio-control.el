@@ -175,21 +175,21 @@ required by pactl 10.0."
   :group 'pulseaudio-control)
 
 (defcustom pulseaudio-control-sink-volume-strings '()
-  "The strings to display for the levels of volume in the currently-selected sink.
-The number of strings provided will determine the number of levels and these will be
-displayed in ascending order."
+  "Strings to display for the volume levels of the currently-selected sink.
+The number of strings provided will determine the number of levels and these
+will be displayed in ascending order."
   :type '(repeat string)
   :group 'pulseaudio-control)
 
 (defcustom pulseaudio-control-source-mute-string ""
-  "The string to display when the currently-selected source is muted."
+  "String to display when the currently-selected source is muted."
   :type 'string
   :group 'pulseaudio-control)
 
 (defcustom pulseaudio-control-source-volume-strings '()
-  "The strings to display for the levels of volume in the currently-selected source.
-The number of strings provided will determine the number of levels and these will be
-displayed in ascending order."
+  "Strings to display for the volumes levels of the currently-selected source.
+The number of strings provided will determine the number of levels and these
+will be displayed in ascending order."
   :type '(repeat string)
   :group 'pulseaudio-control)
 
