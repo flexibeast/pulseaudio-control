@@ -216,7 +216,7 @@ number is required for the calculations performed by
     (with-temp-buffer
       (pulseaudio-control--call-pactl "list short sinks")
       (goto-char (point-min))
-      (while (re-search-forward "\\([[:digit:]]+\\)\\s-+\\(\\S-+\\)" nil t)
+      (while (re-search-forward (rx (group (+ num)) (+ blank) (group (+ (not blank)))) nil t)
         (setq sinks-list
               (append sinks-list `((,(match-string 1) . ,(match-string 2)))))))
     (car (rassoc sink-name sinks-list))))
@@ -265,7 +265,9 @@ number is required for the calculations performed by
 
 (defun pulseaudio-control--get-sinks ()
   "Internal function; get a list of Pulse sinks via `pactl'."
-  (let ((fields-re "^\\(\\S-+\\)\\s-+\\(\\S-+\\)")
+  (let ((fields-re (rx bol (group (+ (not space)))
+                       (+ space)
+                       (group (+ (not space)))))
         (sinks '()))
     (with-temp-buffer
       (pulseaudio-control--call-pactl "list short sinks")
@@ -291,7 +293,7 @@ number is required for the calculations performed by
       (pulseaudio-control--call-pactl "list sink-inputs")
       (goto-char (point-min))
 
-      (while (re-search-forward "^Sink Input #\\([[:digit:]]+\\)$" nil t)
+      (while (re-search-forward (rx bol "Sink Input #" (group (+ num)) eol) nil t)
         (setq input-id (match-string 1))
         (setq props '())
 
@@ -299,20 +301,21 @@ number is required for the calculations performed by
             (and
              (= (forward-line 1) 0)
              (or (and ; special case \t      balance 0.00
-                  (re-search-forward "^\t\s+balance \\(.+\\)$"
+                  (re-search-forward (rx bol (+ blank) "balance " (group (+ any)) eol)
                                      (line-end-position) t)
                   (push (cons "balance" (match-string 1)) props))
 
                  (and ; line format \tKey: value
-                  (re-search-forward "^\t\\([^:]+\\): \\(.+\\)$"
+                  (re-search-forward (rx bol (+ blank) (group (+ (not ":"))) ": " (group (+ any)) eol)
                                      (line-end-position) t)
                   (push (cons (match-string 1) (match-string 2)) props)))))
 
         ;; Now properties in format \t\tdotted.key = "value"
-        (re-search-forward "^\tProperties:$")
+        (re-search-forward (rx bol blank "Properties:" eol))
         (while (and
                 (= (forward-line 1) 0)
-                (re-search-forward "^\t\t\\([^=]+\\)\s=\s\"\\(.+\\)\"$"
+                (re-search-forward (rx bol (+ blank) (group (+ (not "=")))
+                                       blank "=" blank "\"" (group (+ any)) "\"" eol)
                                    (line-end-position) t)
                 (push (cons (match-string 1) (match-string 2)) props)))
 
@@ -346,7 +349,7 @@ Amount of decrease is specified by `pulseaudio-control-volume-step'."
       (pulseaudio-control-display-volume)))
 
 ;;;###autoload
-(defun pulseaudio-control-default-keybindings () 
+(defun pulseaudio-control-default-keybindings ()
   "Make `C-x /' the prefix for accessing pulseaudio-control bindings."
   (interactive)
   (global-set-key (kbd "C-x /") 'pulseaudio-control-map))
@@ -369,26 +372,23 @@ Amount of increase is specified by `pulseaudio-control-volume-step'."
   (interactive)
   (pulseaudio-control--maybe-update-current-sink)
   (let* ((volume-step-unit
-          (if (string-match "\\(%\\|dB\\)"
+          (if (string-match (rx (group (or "%" "dB")))
                             pulseaudio-control-volume-step)
               (match-string 1 pulseaudio-control-volume-step)
             nil))
          (volume-step
           (cond
            ((string-equal "%" volume-step-unit)
-            (if (string-match "^\\([[:digit:]]+\\)%"
-                              pulseaudio-control-volume-step)
+            (if (string-match (rx bol (group (+ num)) "%") pulseaudio-control-volume-step)
                 (string-to-number
                  (match-string 1 pulseaudio-control-volume-step))
               (user-error "Invalid step spec in `pulseaudio-control-volume-step'")))
            ((string-equal "dB" volume-step-unit)
-            (if (string-match "^\\([[:digit:]]+\\)dB"
-                              pulseaudio-control-volume-step)
+            (if (string-match (rx bol (group (+ num)) "dB") pulseaudio-control-volume-step)
                 (string-to-number
                  (match-string 1 pulseaudio-control-volume-step))
               (user-error "Invalid step spec in `pulseaudio-control-volume-step'")))
-           ((if (string-match "^\\([[:digit:]]+\\.[[:digit:]]+\\)"
-                              pulseaudio-control-volume-step)
+           ((if (string-match (rx bol (group (+ num) "." (+ num))) pulseaudio-control-volume-step)
                 (string-to-number pulseaudio-control-volume-step)
               (user-error "Invalid step spec in `pulseaudio-control-volume-step'")))))
          (volume-max
@@ -401,14 +401,12 @@ Amount of increase is specified by `pulseaudio-control-volume-step'."
             (cdr (assoc "raw" pulseaudio-control--volume-maximum)))))
          (volumes-current (pulseaudio-control--get-current-volume))
          (volumes-re-component
-          (concat
-           "\\([[:digit:]]+\\)"
-           "\\s-+/\\s-+"
-           "\\([[:digit:]]+\\)%"
-           "\\s-+/\\s-+"
-           "\\(-?\\([[:digit:]]+\\(\\.[[:digit:]]+\\)?\\)\\|-inf\\) dB"))
+           (rx (group (+ num)) (+ space) "/" (+ space) (group (+ num)) "%"
+               (+ space) "/" (+ space)
+               (group (? "-") (or (group (+ digit) (? (group "." (+ digit)))) "-inf"))
+               " dB"))
          (volumes-re (concat volumes-re-component
-                             "[^:]+:\\s-+"
+                             (rx (+ (not ":")) ":" (+ space))
                              volumes-re-component))
          (volumes-alist
           (progn
@@ -560,13 +558,12 @@ The value can be:
 * in decibels, e.g. '2dB';
 * a linear factor, e.g. '0.9' or '1.1'.
 
-Argument VOLUME is the volume provided by the user." 
+Argument VOLUME is the volume provided by the user."
   (interactive "MVolume: ")
   (pulseaudio-control--maybe-update-current-sink)
-  (let ((valid-volumes-re (concat
-                           "[[:digit:]]+%"
-                           "\\|[[:digit:]]+dB"
-                           "\\|[[:digit:]]+\\.[[:digit:]]+")))
+  (let ((valid-volumes-re (rx (or (: (+ num) "%")
+                                  (: (+ num) "dB")
+                                  (: (+ num) "." (+ num))))))
     (if (string-match valid-volumes-re volume)
         (pulseaudio-control--call-pactl (concat "set-sink-volume "
                                                 pulseaudio-control--current-sink
@@ -616,7 +613,7 @@ Argument SINK is the number provided by the user."
   "Toggle muting of Pulse sink, specified by name."
   (interactive)
   (let* ((valid-sinks (mapcar 'cdr (pulseaudio-control--get-sinks)))
-         (sink (completing-read "Sink name: " valid-sinks))) 
+         (sink (completing-read "Sink name: " valid-sinks)))
     (if (member sink valid-sinks)
         (progn
           (pulseaudio-control--call-pactl
