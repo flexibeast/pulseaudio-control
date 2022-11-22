@@ -1,10 +1,8 @@
 ;;; pulseaudio-control.el --- Use `pactl' to manage PulseAudio volumes.  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2017-2020  Alexis <flexibeast@gmail.com>, Ellington Santos <ellingtonsantos@gmail.com>, Sergey Trofimov <sarg@sarg.org.ru>
+;; Copyright (C) 2017-2022  Alexis <flexibeast@gmail.com>, Ellington Santos <ellingtonsantos@gmail.com>, Sergey Trofimov <sarg@sarg.org.ru>, efimerspan [https://github.com/efimerspan]
 
-;; Author: Alexis <flexibeast@gmail.com>
-;;         Ellington Santos <ellingtonsantos@gmail.com>
-;;         Sergey Trofimov <sarg@sarg.org.ru>
+;; Author: Alexis <flexibeast@gmail.com>, Ellington Santos <ellingtonsantos@gmail.com>, Sergey Trofimov <sarg@sarg.org.ru>, efimerspan [https://github.com/efimerspan]
 ;; Maintainer: Alexis <flexibeast@gmail.com>
 ;; Created: 2017-08-23
 ;; URL: https://github.com/flexibeast/pulseaudio-control
