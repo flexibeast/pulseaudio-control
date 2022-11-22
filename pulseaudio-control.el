@@ -1,10 +1,8 @@
 ;;; pulseaudio-control.el --- Use `pactl' to manage PulseAudio volumes.  -*- lexical-binding: t -*-
 
-;; Copyright (C) 2017-2020  Alexis <flexibeast@gmail.com>, Ellington Santos <ellingtonsantos@gmail.com>, Sergey Trofimov <sarg@sarg.org.ru>
+;; Copyright (C) 2017-2022  Alexis <flexibeast@gmail.com>, Ellington Santos <ellingtonsantos@gmail.com>, Sergey Trofimov <sarg@sarg.org.ru>, efimerspan [https://github.com/efimerspan]
 
-;; Author: Alexis <flexibeast@gmail.com>
-;;         Ellington Santos <ellingtonsantos@gmail.com>
-;;         Sergey Trofimov <sarg@sarg.org.ru>
+;; Author: Alexis <flexibeast@gmail.com>, Ellington Santos <ellingtonsantos@gmail.com>, Sergey Trofimov <sarg@sarg.org.ru>, efimerspan [https://github.com/efimerspan]
 ;; Maintainer: Alexis <flexibeast@gmail.com>
 ;; Created: 2017-08-23
 ;; URL: https://github.com/flexibeast/pulseaudio-control
@@ -211,6 +209,29 @@ required by pactl 10.0."
   :type 'boolean
   :group 'pulseaudio-control)
 
+(defcustom pulseaudio-control-sink-mute-string ""
+  "The string to display when the currently-selected sink is muted."
+  :type 'string
+  :group 'pulseaudio-control)
+
+(defcustom pulseaudio-control-sink-volume-strings '()
+  "Strings to display for the volume levels of the currently-selected sink.
+The number of strings provided will determine the number of levels and these
+will be displayed in ascending order."
+  :type '(repeat string)
+  :group 'pulseaudio-control)
+
+(defcustom pulseaudio-control-source-mute-string ""
+  "String to display when the currently-selected source is muted."
+  :type 'string
+  :group 'pulseaudio-control)
+
+(defcustom pulseaudio-control-source-volume-strings '()
+  "Strings to display for the volumes levels of the currently-selected source.
+The number of strings provided will determine the number of levels and these
+will be displayed in ascending order."
+  :type '(repeat string)
+  :group 'pulseaudio-control)
 
 ;; Internal variables.
 
@@ -237,6 +258,8 @@ number is required for the calculations performed by
 
 '-120' is the rough dB equivalent of 1% volume.")
 
+(defvar pulseaudio-control-display-volume-string nil
+  "Current volume level string to be displayed on the mode line.")
 
 ;; Internal functions.
 
@@ -245,14 +268,13 @@ number is required for the calculations performed by
  `or-source' that takes two expression branches and evaluates
  one of them based on if THING is a source or a sink."
   (let ((expanded-thing (gensym)))
-    `(progn
-       (let ((,expanded-thing ,thing))
-         (cl-macrolet ((or-source
-                        (res-source res-sink)
-                        `(if (eq ,',expanded-thing 'source)
-                             ,res-source
-                           ,res-sink)))
-           ,@body)))))
+    `(let ((,expanded-thing ,thing))
+       (cl-macrolet ((or-source
+                      (res-source res-sink)
+                      `(if (eq ,',expanded-thing 'source)
+                           ,res-source
+                         ,res-sink)))
+         ,@body))))
 
 (defun pulseaudio-control--call-pactl (command)
   "Call `pactl' with COMMAND as its arguments.
@@ -283,17 +305,17 @@ number is required for the calculations performed by
      (with-temp-buffer
        (pulseaudio-control--call-pactl (format "list short %s" (or-source "sources" "sinks")))
        (goto-char (point-min))
-       (while (re-search-forward "\\([[:digit:]]+\\)\\s-+\\(\\S-+\\)" nil t)
+       (while (re-search-forward (rx (group (+ num)) (+ blank) (group (+ (not blank)))) nil t)
          (setq things-list (append things-list `((,(match-string 1) . ,(match-string 2)))))))
      (car (rassoc thing-name things-list)))))
 
 (defun pulseaudio-control--get-default-sink ()
-   "Get index of DEFAULT_SINK."
-   (pulseaudio-control--get-default-thing 'sink))
+  "Get index of DEFAULT_SINK."
+  (pulseaudio-control--get-default-thing 'sink))
 
 (defun pulseaudio-control--get-default-source ()
-   "Get index of DEFAULT_SOURCE."
-   (pulseaudio-control--get-default-thing 'source))
+  "Get index of DEFAULT_SOURCE."
+  (pulseaudio-control--get-default-thing 'source))
 
 (defun pulseaudio-control--get-current-volume (thing)
   "Get volume of currently-selected THING."
@@ -315,8 +337,8 @@ number is required for the calculations performed by
        (buffer-substring beg (point))))))
 
 (defun pulseaudio-control--get-current-sink-volume ()
-   "Get volume of the currently-selected sink."
-   (pulseaudio-control--get-current-volume 'sink))
+  "Get volume of the currently-selected sink."
+  (pulseaudio-control--get-current-volume 'sink))
 
  (defun pulseaudio-control--get-current-source-volume ()
    "Get volume of the currently-selected source."
@@ -343,8 +365,8 @@ number is required for the calculations performed by
        (buffer-substring beg (point))))))
 
 (defun pulseaudio-control--get-current-sink-mute ()
-   "Get the mute status of the currently-selected sink."
-   (pulseaudio-control--get-current-mute 'sink))
+  "Get the mute status of the currently-selected sink."
+  (pulseaudio-control--get-current-mute 'sink))
 
  (defun pulseaudio-control--get-current-source-mute ()
    "Get the mute status of the currently-selected source."
@@ -354,7 +376,9 @@ number is required for the calculations performed by
   "Internal function; get a list of Pulse THINGs via `pactl'."
   (pulseaudio-control--with-thing
    thing
-   (let ((fields-re "^\\(\\S-+\\)\\s-+\\(\\S-+\\)")
+   (let ((fields-re (rx bol (group (+ (not space)))
+                        (+ space)
+                        (group (+ (not space)))))
          things)
      (with-temp-buffer
        (pulseaudio-control--call-pactl
@@ -368,12 +392,12 @@ number is required for the calculations performed by
      things)))
 
 (defun pulseaudio-control--get-sinks ()
-   "Internal function; get a list of Pulse sinks via `pactl'."
-   (pulseaudio-control--get-things 'sink))
+  "Internal function; get a list of Pulse sinks via `pactl'."
+  (pulseaudio-control--get-things 'sink))
 
 (defun pulseaudio-control--get-sources ()
-   "Internal function; get a list of Pulse sources via `pactl'."
-   (pulseaudio-control--get-things 'source))
+  "Internal function; get a list of Pulse sources via `pactl'."
+  (pulseaudio-control--get-things 'source))
 
 (defun pulseaudio-control--maybe-update-current-sink ()
   "If required, update value of `pulseaudio-control--current-sink'."
@@ -396,7 +420,7 @@ number is required for the calculations performed by
       (pulseaudio-control--call-pactl "list sink-inputs")
       (goto-char (point-min))
 
-      (while (re-search-forward "^Sink Input #\\([[:digit:]]+\\)$" nil t)
+      (while (re-search-forward (rx bol "Sink Input #" (group (+ num)) eol) nil t)
         (setq input-id (match-string 1))
         (setq props '())
 
@@ -404,20 +428,21 @@ number is required for the calculations performed by
             (and
              (= (forward-line 1) 0)
              (or (and ; special case \t      balance 0.00
-                  (re-search-forward "^\t\s+balance \\(.+\\)$"
+                  (re-search-forward (rx bol (+ blank) "balance " (group (+ any)) eol)
                                      (line-end-position) t)
                   (push (cons "balance" (match-string 1)) props))
 
                  (and ; line format \tKey: value
-                  (re-search-forward "^\t\\([^:]+\\): \\(.+\\)$"
+                  (re-search-forward (rx bol (+ blank) (group (+ (not ":"))) ": " (group (+ any)) eol)
                                      (line-end-position) t)
                   (push (cons (match-string 1) (match-string 2)) props)))))
 
         ;; Now properties in format \t\tdotted.key = "value"
-        (re-search-forward "^\tProperties:$")
+        (re-search-forward (rx bol blank "Properties:" eol))
         (while (and
                 (= (forward-line 1) 0)
-                (re-search-forward "^\t\t\\([^=]+\\)\s=\s\"\\(.+\\)\"$"
+                (re-search-forward (rx bol (+ blank) (group (+ (not "=")))
+                                       blank "=" blank "\"" (group (+ any)) "\"" eol)
                                    (line-end-position) t)
                 (push (cons (match-string 1) (match-string 2)) props)))
 
@@ -450,19 +475,16 @@ Amount of increase is specified by `pulseaudio-control-volume-step'."
           (volume-step
            (cond
             ((string-equal "%" volume-step-unit)
-             (if (string-match "^\\([[:digit:]]+\\)%"
-                               pulseaudio-control-volume-step)
+             (if (string-match (rx bol (group (+ num)) "%") pulseaudio-control-volume-step)
                  (string-to-number
                   (match-string 1 pulseaudio-control-volume-step))
                (user-error "Invalid step spec in `pulseaudio-control-volume-step'")))
             ((string-equal "dB" volume-step-unit)
-             (if (string-match "^\\([[:digit:]]+\\)dB"
-                               pulseaudio-control-volume-step)
+             (if (string-match (rx bol (group (+ num)) "dB") pulseaudio-control-volume-step)
                  (string-to-number
                   (match-string 1 pulseaudio-control-volume-step))
                (user-error "Invalid step spec in `pulseaudio-control-volume-step'")))
-            ((if (string-match "^\\([[:digit:]]+\\.[[:digit:]]+\\)"
-                               pulseaudio-control-volume-step)
+            ((if (string-match (rx bol (group (+ num) "." (+ num))) pulseaudio-control-volume-step)
                  (string-to-number pulseaudio-control-volume-step)
                (user-error "Invalid step spec in `pulseaudio-control-volume-step'")))))
           (volume-max
@@ -476,14 +498,12 @@ Amount of increase is specified by `pulseaudio-control-volume-step'."
           (volumes-current (or-source (pulseaudio-control--get-current-source-volume)
                                       (pulseaudio-control--get-current-sink-volume)))
           (volumes-re-component
-           (concat
-            "\\([[:digit:]]+\\)"
-            "\\s-+/\\s-+"
-            "\\([[:digit:]]+\\)%"
-            "\\s-+/\\s-+"
-            "\\(-?\\([[:digit:]]+\\(\\.[[:digit:]]+\\)?\\)\\|-inf\\) dB"))
+           (rx (group (+ num)) (+ space) "/" (+ space) (group (+ num)) "%"
+               (+ space) "/" (+ space)
+               (group (? "-") (or (group (+ digit) (? (group "." (+ digit)))) "-inf"))
+               " dB"))
           (volumes-re (concat volumes-re-component
-                              "[^:]+:\\s-+"
+                              (rx (+ (not ":")) ":" (+ space))
                               volumes-re-component))
           (volumes-alist
            (progn
@@ -583,7 +603,9 @@ Amount of increase is specified by `pulseaudio-control-volume-step'."
                                " +"
                                pulseaudio-control-volume-step))))))
      (if pulseaudio-control-volume-verbose
-         (pulseaudio-control-display-volume)))))
+         (pulseaudio-control-display-volume))
+     (when pulseaudio-control-display-mode
+       (pulseaudio-control-update-display-volume)))))
 
 (defun pulseaudio-control--decrease-volume (thing)
   "Decrease volume of currently-selected Pulse THING.
@@ -602,7 +624,9 @@ Amount to decrease is specified by `pulseaudio-control-volume-step'."
             " -"
             pulseaudio-control-volume-step)))
   (if pulseaudio-control-volume-verbose
-      (pulseaudio-control-display-volume)))
+      (pulseaudio-control-display-volume))
+  (when pulseaudio-control-display-mode
+    (pulseaudio-control-update-display-volume)))
 
 (defun pulseaudio-control--select-thing-by-name (thing)
    "Select which Pulse THING to act on, by name."
@@ -624,7 +648,9 @@ Amount to decrease is specified by `pulseaudio-control-volume-step'."
                               (car (rassoc thing valid-things)))
                         (setq pulseaudio-control--current-sink
                               (car (rassoc thing valid-things)))))
-        (error (format "Invalid %s name" (or-source "source" "sink")))))))
+        (error (format "Invalid %s name" (or-source "source" "sink")))))
+    (when pulseaudio-control-display-mode
+      (pulseaudio-control-update-display-volume))))
 
 (defun pulseaudio-control--set-volume (volume thing)
   "Set volume of currently-selected Pulse THING.
@@ -640,21 +666,21 @@ Argument VOLUME is the volume provided by the user."
    thing
    (or-source (pulseaudio-control--maybe-update-current-source)
               (pulseaudio-control--maybe-update-current-sink))
-   (let ((valid-volumes-re (concat
-                            "[[:digit:]]+%"
-                            "\\|[[:digit:]]+dB"
-                            "\\|[[:digit:]]+\\.[[:digit:]]+")))
+   (let ((valid-volumes-re (rx (or (: (+ num) "%")
+                                   (: (+ num) "dB")
+                                   (: (+ num) "." (+ num))))))
      (if (string-match valid-volumes-re volume)
          (pulseaudio-control--call-pactl
           (concat (format
                    "set-%s-volume "
                    (or-source "source" "sink"))
-                  (or-source
-                   pulseaudio-control--current-source
-                   pulseaudio-control--current-sink)
+                  (or-source pulseaudio-control--current-source
+                             pulseaudio-control--current-sink)
                   " "
                   volume))
-       (error "Invalid volume")))))
+       (error "Invalid volume")))
+   (when pulseaudio-control-display-mode
+     (pulseaudio-control-update-display-volume))))
 
 (defun pulseaudio-control--select-thing-by-index (index thing)
   "Select which Pulse THING to act on, by numeric index.
@@ -692,7 +718,9 @@ Argument INDEX is the number provided by the user."
                       (setq pulseaudio-control--current-sink index))
            (pulseaudio-control--call-pactl
             (format "set-default-%s %s" (or-source "source" "sink") index)))
-       (error (format "Invalid %s index" (or-source "source" "sink")))))))
+       (error (format "Invalid %s index" (or-source "source" "sink")))))
+   (when pulseaudio-control-display-mode
+     (pulseaudio-control-update-display-volume))))
 
 (defun pulseaudio-control--toggle-current-thing-mute (thing)
   "Toggle muting of currently-selected Pulse THING."
@@ -707,7 +735,9 @@ Argument INDEX is the number provided by the user."
                        pulseaudio-control--current-sink)
             " toggle")))
   (if pulseaudio-control-volume-verbose
-      (pulseaudio-control-display-volume)))
+      (pulseaudio-control-display-volume))
+  (when pulseaudio-control-display-mode
+    (pulseaudio-control-update-display-volume)))
 
 (defun pulseaudio-control--toggle-thing-mute-by-index (thing)
   "Toggle muting of Pulse THING, specified by index."
@@ -727,7 +757,9 @@ Argument INDEX is the number provided by the user."
             (concat (format "set-%s-mute " (or-source "source" "sink"))
                     thing
                     " toggle")))
-       (error (format "Invalid %s index" (or-source "source" "sink")))))))
+       (error (format "Invalid %s index" (or-source "source" "sink")))))
+   (when pulseaudio-control-display-mode
+     (pulseaudio-control-update-display-volume))))
 
 (defun pulseaudio-control--toggle-thing-mute-by-name (thing)
   "Toggle muting of Pulse THING, specified by name."
@@ -744,7 +776,93 @@ Argument INDEX is the number provided by the user."
             (concat (format "set-%s-mute " (or-source "source" "sink"))
                     thing
                     " toggle")))
-       (error (format "Invalid %s name" (or-source "source" "sink")))))))
+       (error (format "Invalid %s name" (or-source "source" "sink")))))
+   (when pulseaudio-control-display-mode
+     (pulseaudio-control-update-display-volume))))
+
+(defun pulseaudio-control-update-display-volume ()
+  "Update the display of `pulseaudio-control-display-volume-string'."
+  (interactive)
+  (when-let ((volume-step-unit
+              (if (string-match (rx (group (or "%" "dB")))
+                                pulseaudio-control-volume-step)
+                  (match-string 1 pulseaudio-control-volume-step)
+                nil))
+             (vol-re
+              (rx (group (+ num)) (+ space) "/" (+ space) (group (+ num)) "%"
+                  (+ space) "/" (+ space)
+                  (group (? "-") (or (group (+ digit) (? (group "." (+ digit)))) "-inf"))
+                  " dB"))
+             (vol-sink (pulseaudio-control--get-current-sink-volume))
+             (vol-source (pulseaudio-control--get-current-source-volume)))
+    (cl-flet ((compute-vol
+               (vol)
+               (string-match vol-re vol)
+               (string-to-number
+                (pcase volume-step-unit
+                  ("%" (match-string 2 vol))
+                  ("dB" (match-string 3 vol))
+                  (_ (match-string 1 vol)))))
+              (format-vol
+               (icon vol)
+               (pcase volume-step-unit
+                 ("%" (format "%s %2d%%" icon vol))
+                 ("dB" (format "%s %d dB" icon vol))
+                 (_ (format "%s %d" icon vol)))))
+      (prog1
+          (setq pulseaudio-control-display-volume-string
+                (format "%s %s "
+                        (format-vol
+                         (pulseaudio-control--update-display-string
+                          (compute-vol vol-source) 'source)
+                         (compute-vol vol-source))
+                        (format-vol
+                         (pulseaudio-control--update-display-string
+                          (compute-vol vol-sink) 'sink)
+                         (compute-vol vol-sink))))
+        (force-mode-line-update t)))))
+
+(defun pulseaudio-control--update-display-string (volume thing)
+  "Return the correct string for the currently-selected THING VOLUME status."
+  (pulseaudio-control--with-thing
+   thing
+   (let* ((volume-step-unit
+           (if (string-match (rx (group (or "%" "dB")))
+                             pulseaudio-control-volume-step)
+               (match-string 1 pulseaudio-control-volume-step)
+             nil))
+          (volume-max
+           (pcase volume-step-unit
+             ("%" (cdr (assoc "percent" pulseaudio-control--volume-maximum)))
+             ("dB" (cdr (assoc "decibels" pulseaudio-control--volume-maximum)))
+             (_ (cdr (assoc "raw" pulseaudio-control--volume-maximum)))))
+          (current-volume-level
+           (and (or-source pulseaudio-control-source-volume-strings
+                            pulseaudio-control-sink-volume-strings)
+                (pcase volume-step-unit
+                  ("%" (floor
+                        (/ (* (/ (float volume) volume-max) 100)
+                           (/ 100 (length
+                                   (or-source pulseaudio-control-source-volume-strings
+                                               pulseaudio-control-sink-volume-strings)))))))))
+          (mute-p
+           (string-match "yes"
+                         (or-source (pulseaudio-control--get-current-source-mute)
+                                     (pulseaudio-control--get-current-sink-mute)))))
+     (if mute-p
+         (or-source pulseaudio-control-source-mute-string
+                     pulseaudio-control-sink-mute-string)
+       (if pulseaudio-control-sink-volume-strings
+           (if (= current-volume-level
+                  (length (or-source pulseaudio-control-source-volume-strings
+                                      pulseaudio-control-sink-volume-strings)))
+               (nth (- current-volume-level 1)
+                    (or-source pulseaudio-control-source-volume-strings
+                                pulseaudio-control-sink-volume-strings))
+             (nth current-volume-level
+                  (or-source pulseaudio-control-source-volume-strings
+                              pulseaudio-control-sink-volume-strings)))
+         "")))))
 
 ;; User-facing functions.
 
@@ -924,6 +1042,20 @@ Argument VOLUME is the volume provided by the user."
         (message "Using @DEFAULT_SOURCE@ for volume operations"))
     (setq pulseaudio-control-use-default-source nil)
     (message "No longer using @DEFAULT_SOURCE@ for volume operations")))
+
+;;;###autoload
+(define-minor-mode pulseaudio-control-display-mode
+  "Show the current sink and source information in the mode line."
+  :global t :group 'pulseaudio-control
+  (or global-mode-string (setq global-mode-string '("")))
+  (if pulseaudio-control-display-mode
+      (progn
+        (or (memq 'pulseaudio-control-display-volume-string
+                  global-mode-string)
+            (setq global-mode-string
+                  (append global-mode-string '(pulseaudio-control-display-volume-string))))
+        (pulseaudio-control-update-display-volume))
+    (setq pulseaudio-control-display-volume-string nil)))
 
 ;; Default keymap.
 
