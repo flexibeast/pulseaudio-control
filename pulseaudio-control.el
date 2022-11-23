@@ -878,8 +878,8 @@ Argument INDEX is the number provided by the user."
   (interactive)
   (let ((volume (replace-regexp-in-string
                  "%" "%%"
-                 (pulseaudio-control--get-current-volume)))
-        (mute (pulseaudio-control--get-current-mute)))
+                 (pulseaudio-control--get-current-volume 'sink)))
+        (mute (pulseaudio-control--get-current-mute 'sink)))
     (message (concat volume "   |   " mute))))
 
 ;;;###autoload
