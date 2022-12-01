@@ -605,8 +605,8 @@ Amount of increase is specified by `pulseaudio-control-volume-step'."
 Amount to decrease is specified by `pulseaudio-control-volume-step'."
   (pulseaudio-control--with-thing
    thing
-   (or-source (pulseaudio-control--maybe-update-current-sink)
-              (pulseaudio-control--maybe-update-current-source))
+   (or-source (pulseaudio-control--maybe-update-current-source)
+              (pulseaudio-control--maybe-update-current-sink))
    (pulseaudio-control--call-pactl
     (concat (or-source (concat "set-source-volume "
                                pulseaudio-control--current-source)
