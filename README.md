@@ -1,4 +1,5 @@
 # pulseaudio-control - Use `pactl` to manage PulseAudio volumes
+## NOTE: This repository is now read-only - official repository now at https://git.sr.ht/~flexibeast/pulseaudio-control
 
 *Author:* Alexis <flexibeast@gmail.com>, Ellington Santos <ellingtonsantos@gmail.com>, Sergey Trofimov <sarg@sarg.org.ru><br>
 *Version:* 0.1<br>
